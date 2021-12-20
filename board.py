@@ -74,7 +74,6 @@ class Board:
             raise ValueError("Error: that is not your piece!")
         else:
             # check that new position is valid
-            print((new_pos.xpos, new_pos.ypos), old_piece.validMoves())
             if new_pos.returnState() != "EMPTY":
                 raise ValueError("Error: cannot move on top of another piece")
             elif (new_pos.xpos, new_pos.ypos) not in old_piece.validMoves():
