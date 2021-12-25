@@ -27,7 +27,7 @@ class Square:
     def validMoves(self):
         """ return moves from this square that are within the board range """
         x, y = self.xpos, self.ypos
-        valid_range = range(7)
+        valid_range = range(8)
         if self.piece_type == "KING":
             all_moves = [(2,-2),(2,2),(-2,-2),(-2,2),(1,1),(-1,1),(-1,-1),(1,-1)]
         elif self.state == "BLACK":
