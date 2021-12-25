@@ -8,18 +8,32 @@ class Board:
     def __init__(self):
         self.gameboard = [[Square(i,j) for i in range(8)] for j in range(8)]
         self.turn = "WHITE"
+        self.new = ""
+        self.old = ""
     
     def changeTurn(self):
         self.turn = [i for i in ["WHITE","BLACK"] if self.turn != i][0]
     
     def setPieces(self):
         """ set the gameboard for the beginning of the game """
-        for row in range(2):
-            for square in self.gameboard[row]:
-                square.updateState("white")
-        for row in range(-2,0):
-            for square in self.gameboard[row]:
-                square.updateState("black")
+
+        def setSide(start, end, color):
+            """ set the pieces of a specific side of the board """
+            for row in range(start, end):
+                if row % 2 != 0:
+                    gamesquare = 0 
+                else:
+                    gamesquare = 1
+                for square in self.gameboard[row]:
+                    if gamesquare == 1:
+                        square.updateState(color)
+                        gamesquare = 0
+                    else:
+                        gamesquare = 1
+        
+        setSide(0, 3, "white")
+        setSide(-3, 0, "black")
+        self.printBoard()
                 
     def printBoard(self):
         """ print the current state of the gameboard """
@@ -34,74 +48,98 @@ class Board:
             print(str(self.gameboard.index(row)) + " " + " ".join(row_print))
             print("  -----------------------------")
 
+        print("\n--------------------------------------------------\n")
+
+    def updatePositions(self):
+        """ update the position of a moved piece, check for captures """
+        new_x, new_y = self.new.xpos, self.new.ypos
+        old_x, old_y = self.old.xpos, self.old.ypos
+        if new_x - old_x == 2:
+            if new_y - old_y == 2:
+                check = self.gameboard[new_y-1][new_x-1]
+                self.checkCapture(check)
+            elif new_y - old_y == -2:
+                check = self.gameboard[new_y+1][new_x-1]
+                self.checkCapture(check)
+        elif new_x - old_x == -2:
+            if new_y - old_y == 2:
+                check = self.gameboard[new_y-1][new_x+1]
+                self.checkCapture(check)
+            elif new_y - old_y == -2:
+                check = self.gameboard[new_x+1][new_x+1]
+                self.checkCapture(check)
+        else:
+            # update states of old and new squares
+            self.updateLocations()
+
+    def checkCapture(self, captured):
+        """ verify capture makes sense """
+        if captured.state == self.turn:
+            print("Error: you can't take your own piece")
+        elif captured.state == "EMPTY":
+            print("Error: you can't jump an empty space")
+        else:
+            self.updateLocations()
+
+    def updateLocations(self):
+        """ update states of moved squares, change turn """
+        self.old.updateState("EMPTY")
+        self.new.updateState(self.turn)
+        self.changeTurn()
+
+    def parseLocation(self, loc):
+        """ parse user input locations """
+        try:
+            xpos, ypos = position_dictionary[loc[0]], int(loc[1])
+        except:
+            print("Error: improper location format")
+        if ypos > 7:
+            print("Error: position out of board range")
+        return self.gameboard[ypos][xpos]
+
+
     def movePiece(self, old_loc, new_loc):
         """ move a piece on the gameboard """
-
-        def parseLocation(loc):
-            """ parse user input locations """
-            try:
-                xpos, ypos = position_dictionary[loc[0]], int(loc[1])
-            except:
-                raise ValueError("Error: improper location format")
-            if ypos > 7:
-                raise ValueError("Error: position out of board range")
-            return self.gameboard[ypos][xpos]
-
-        def updateLocations(new, old):
-            """ update states of moved squares, change turn """
-            old.updateState("EMPTY")
-            new.updateState(self.turn)
-            self.changeTurn()
-
-        def checkCapture(captured):
-            """ verify capture makes sense """
-            if captured.returnState() == self.turn:
-                raise ValueError("Error: you can't take your own piece")
-            elif captured.returnState() == "EMPTY":
-                raise ValueError("Error: you can't jump an empty space")
-            else:
-                updateLocations(new_pos, old_piece)
-
-
         # return board squares from input move
-        old_piece = parseLocation(old_loc)
-        new_pos = parseLocation(new_loc)
+        self.old = self.parseLocation(old_loc)
+        self.new = self.parseLocation(new_loc)
 
         # check that old position is valid
-        if old_piece.returnState() == "EMPTY":
-            raise ValueError("Error: no game piece at chosen location")
-        elif old_piece.returnState() != self.turn:
-            raise ValueError("Error: that is not your piece!")
+        if self.old.state == "EMPTY":
+            print("Error: no game piece at chosen location")
+        elif self.old.state != self.turn:
+            print("Error: that is not your piece!")
         else:
             # check that new position is valid
-            if new_pos.returnState() != "EMPTY":
-                raise ValueError("Error: cannot move on top of another piece")
-            elif (new_pos.xpos, new_pos.ypos) not in old_piece.validMoves():
-                raise ValueError("Error: invalid move")
+            if self.new.state != "EMPTY":
+                print("Error: cannot move on top of another piece")
+            elif (self.new.xpos, self.new.ypos) not in self.old.validMoves():
+                print(self.old.validMoves())
+                print("Error: invalid move")
             else:
-                # check if a piece has been taken
-                new_x, new_y = new_pos.xpos, new_pos.ypos
-                old_x, old_y = old_piece.xpos, old_piece.ypos
-                if new_x != old_x:
-                    if new_x > old_x:
-                        if new_y > old_y:
-                            check = self.gameboard[new_x-1][new_y-1]
-                            checkCapture(check)
-                        else:
-                            check = self.gameboard[new_x-1][new_y+1]
-                            checkCapture(check)
-                    else:
-                        if new_y > old_y:
-                            check = self.gameboard[new_x+1][new_y-1]
-                            checkCapture(check)
-                        else:
-                            check = self.gameboard[new_x+1][new_y+1]
-                            checkCapture(check)
-                else:
-                    # update states of old and new squares
-                    updateLocations(new_pos, old_piece)
-                    
-checker = Board()
-checker.setPieces()
-checker.printBoard()
-checker.movePiece("A1","A2")
+                self.updatePositions()
+
+    def checkWin(self):
+        """ check to see if either side has won the game """
+        def countPieces(color):
+            return len([item for sublist in self.gameboard for item in sublist if item.state==color])==0
+        if countPieces("WHITE"):
+            print("Black wins the game!!!")
+            return 1
+        elif countPieces("BLACK"):
+            print("White wins the game!!!")
+            return 0
+
+    def takeInputs(self):
+        """ get movement inputs from the user """
+        old = str(input("Choose Piece: ")).upper()
+        new = str(input("Choose Location: ")).upper()
+        return old, new
+
+    def playGame(self):
+        """ routine to play the game """
+        old_pos, new_pos = self.takeInputs()
+        self.movePiece(old_pos, new_pos)
+        self.printBoard()
+        self.checkWin()
+
