@@ -79,6 +79,7 @@ class Board:
         elif captured.state == "EMPTY":
             print("Error: you can't jump an empty space")
         else:
+            captured.updateState("EMPTY")
             self.updateLocations()
 
     def updateLocations(self):
@@ -114,7 +115,6 @@ class Board:
             if self.new.state != "EMPTY":
                 print("Error: cannot move on top of another piece")
             elif (self.new.xpos, self.new.ypos) not in self.old.validMoves():
-                print(self.old.validMoves())
                 print("Error: invalid move")
             else:
                 self.updatePositions()
